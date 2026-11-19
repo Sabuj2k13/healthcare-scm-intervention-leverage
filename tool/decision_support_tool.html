@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supplementary file S3 – Intervention leverage decision-support tool</title>
+<style>
+:root{--ink:#1d2433;--muted:#5b6475;--line:#d9dde5;--bg:#f6f7f9;--acc:#2b5797;--acc2:#e8eef8;--good:#1f7a4d}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:20px 28px}
+h1{font-size:19px;margin:0 0 4px}header p{margin:0;color:var(--muted);max-width:900px}
+main{max-width:1180px;margin:0 auto;padding:20px 28px 60px;display:grid;grid-template-columns:330px 1fr;gap:22px}
+section{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:18px}
+h2{font-size:15px;margin:0 0 10px}h2 small{font-weight:400;color:var(--muted)}
+label{display:block;font-size:12.5px;color:var(--muted);margin:8px 0 3px}
+input[type=number]{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.costs{display:grid;grid-template-columns:1fr 70px;gap:4px 8px;align-items:center;font-size:12.5px}
+.costs input{padding:3px 6px}
+button{background:var(--acc);color:#fff;border:0;border-radius:7px;padding:9px 14px;font:600 13.5px system-ui;cursor:pointer;width:100%;margin-top:12px}
+button.sec{background:var(--acc2);color:var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right}
+th{background:#fafbfc;color:var(--muted);font-weight:600}td:first-child,th:first-child,td.l,th.l{text-align:left}
+.tag{font-size:11px;padding:1px 6px;border-radius:9px;background:#eef1f5;color:var(--muted)}.tag.c{background:#e5f3ec;color:var(--good)}
+.kpi{display:flex;gap:14px;flex-wrap:wrap}.kpi div{flex:1;min-width:160px;background:var(--acc2);border-radius:8px;padding:10px 12px}
+.kpi b{display:block;font-size:20px;color:var(--acc)}.kpi span{font-size:12px;color:var(--muted)}
+#status{color:var(--muted);font-size:12.5px;margin-top:8px;min-height:18px}
+.note{color:var(--muted);font-size:12px;margin-top:8px}svg text{font:11px system-ui;fill:var(--muted)}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>Intervention leverage decision-support tool</h1>
+<p>Supplementary file S3 to “From mapping to mitigation: A closed-form intervention leverage measure for healthcare supply chain risk networks”. The tool uses the aggregated direct-relation matrix of the study (Table 5) and reproduces the leverage (Eq. 14), target reduction (Eq. 15), break-even ratios and exact bundle enumeration of the paper. Enter relative intervention costs and a budget to obtain the budget-optimal bundle and the cost–reduction frontier. Everything runs locally in the browser.</p></header>
+<main>
+<div>
+<section><h2>Settings</h2>
+<label for="lam">Proportional reduction λ in a mitigated factor’s outgoing influence</label>
+<input id="lam" type="number" min="0.05" max="1" step="0.05" value="0.5">
+<label for="budget">Budget (same unit as costs)</label>
+<input id="budget" type="number" min="0" step="0.5" value="5">
+<p class="note">With all costs equal to 1, the budget is the number of interventions that can be funded.</p>
+<h2 style="margin-top:14px">Relative cost of mitigating each factor</h2>
+<div class="costs" id="costs"></div>
+<button id="run">Compute</button><button class="sec" id="reset">Reset costs to 1</button>
+<div id="status"></div></section>
+</div>
+<div>
+<section><h2>Budget-optimal bundle</h2><div class="kpi" id="kpi"></div></section>
+<section><h2>Cost–reduction frontier <small>(efficient bundles from all 65,536)</small></h2><div id="chart"></div></section>
+<section><h2>Single-factor leverage <small>(break-even ratio τ = ΔΣ<sub>i</sub>/ΔΣ<sub>top</sub>)</small></h2><table id="lev"></table>
+<p class="note">Factor i is a better first investment than the top factor only if its cost is below τ times the cost of the top factor. Group is from the sign of D − R.</p></section>
+<section><h2>Best bundle of each size</h2><table id="sizes"></table></section>
+</div></main>
+<script>
+const A=[[0.0, 0.514, 0.032, 0.01, 0.013, 0.651, 0.39, 0.622, 0.01, 0.028, 0.419, 0.01, 0.68, 0.39, 0.39, 0.017], [0.055, 0.0, 0.01, 0.68, 1.0, 0.68, 0.477, 0.68, 0.225, 0.68, 0.68, 0.39, 0.68, 1.0, 0.68, 0.028], [0.011, 0.015, 0.0, 0.028, 0.09, 0.225, 0.373, 0.028, 0.68, 0.39, 0.01, 0.68, 0.39, 0.225, 0.651, 0.39], [0.021, 0.028, 0.075, 0.0, 0.028, 0.39, 0.033, 0.39, 0.225, 0.225, 0.419, 0.03, 0.68, 0.39, 0.225, 0.01], [0.087, 0.39, 0.225, 0.68, 0.0, 0.68, 0.39, 0.419, 0.68, 0.651, 0.651, 0.68, 1.0, 0.68, 0.68, 0.68], [0.419, 0.183, 0.68, 0.39, 0.39, 0.0, 0.68, 0.028, 0.225, 0.622, 0.68, 0.622, 0.68, 0.68, 0.39, 0.39], [0.01, 0.225, 0.013, 0.39, 0.01, 0.028, 0.0, 0.047, 0.39, 0.419, 0.01, 0.225, 0.225, 0.39, 0.21, 0.107], [0.047, 0.075, 0.047, 0.028, 0.651, 0.419, 0.39, 0.0, 0.028, 1.0, 0.028, 0.028, 0.39, 0.68, 0.032, 0.047], [0.096, 0.535, 0.39, 0.68, 0.622, 0.419, 0.047, 0.075, 0.0, 0.075, 0.39, 1.0, 0.68, 0.075, 0.075, 0.39], [0.39, 0.373, 0.01, 0.68, 0.225, 1.0, 0.225, 0.419, 0.047, 0.0, 0.01, 0.028, 0.68, 0.68, 0.225, 0.225], [0.047, 0.025, 0.68, 0.419, 0.028, 0.651, 0.047, 0.39, 0.047, 0.028, 0.0, 0.032, 0.39, 0.028, 0.047, 0.047], [0.075, 0.39, 0.166, 0.535, 0.39, 0.651, 1.0, 0.68, 0.68, 0.075, 0.028, 0.0, 0.68, 0.68, 0.419, 0.68], [0.01, 0.01, 0.225, 0.477, 0.225, 0.01, 0.01, 0.01, 0.39, 0.028, 0.01, 0.68, 0.0, 0.68, 0.067, 0.01], [0.654, 1.0, 0.68, 0.39, 0.651, 0.68, 0.419, 0.68, 0.68, 0.39, 0.225, 0.39, 1.0, 0.0, 0.68, 0.448], [0.712, 0.68, 1.0, 0.68, 0.68, 0.39, 0.419, 0.68, 0.39, 0.68, 0.419, 0.448, 0.68, 0.39, 0.0, 0.126], [0.105, 0.651, 0.39, 0.622, 0.68, 0.21, 0.68, 0.225, 0.39, 0.225, 0.01, 0.448, 0.225, 0.39, 0.01, 0.0]]; const NAMES=["Transportation interruptions", "Inaccurate demand forecasting", "Substandard products and legal liability", "Supplier bankruptcy or financial instability", "Over-reliance on non-scalable suppliers", "Trade disputes and geopolitical conflict", "Poor working conditions and labor strikes", "Climate-related disruptions", "Low technology acceptance and process inefficiency", "Power outages and unreliable energy", "Customs delays, tariffs and trade restrictions", "Shortage of specialized skilled workforce", "Pandemic-related disruption impact", "Sudden demand shifts", "Ripple effect of production delays", "Lack of supply chain transparency"];
+// Core computations (shared by the HTML tool and the Node test)
+function solve(M, b){ // Gaussian elimination with partial pivoting, M n×n (copied), returns x
+  const n=b.length, a=M.map((r,i)=>r.concat([b[i]]));
+  for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(a[r][c])>Math.abs(a[p][c])) p=r;
+    [a[c],a[p]]=[a[p],a[c]];
+    for(let r=c+1;r<n;r++){ const f=a[r][c]/a[c][c]; if(f!==0) for(let k=c;k<=n;k++) a[r][k]-=f*a[c][k]; } }
+  const x=new Array(n).fill(0);
+  for(let r=n-1;r>=0;r--){ let s=a[r][n]; for(let k=r+1;k<n;k++) s-=a[r][k]*x[k]; x[r]=s/a[r][r]; }
+  return x;
+}
+function makeModel(A){
+  const n=A.length, s=Math.max(...A.map(r=>r.reduce((u,v)=>u+v,0)));
+  const X=A.map(r=>r.map(v=>v/s));
+  const totalOf=(Xm)=>{ // sum of X (I-X)^-1 = 1' X z, with (I-X) z = 1
+    const M=Xm.map((r,i)=>r.map((v,j)=>(i===j?1:0)-v)); const z=solve(M,new Array(n).fill(1));
+    let t=0; for(let i=0;i<n;i++) for(let j=0;j<n;j++) t+=Xm[i][j]*z[j]; return t; };
+  // full T for D, R, t_ii
+  const IX=X.map((r,i)=>r.map((v,j)=>(i===j?1:0)-v)); const inv=[];
+  for(let j=0;j<n;j++){ const e=new Array(n).fill(0); e[j]=1; inv.push(solve(IX,e)); } // columns of (I-X)^-1
+  const T=X.map((r,i)=>Array.from({length:n},(_,j)=>{let u=0; for(let k=0;k<n;k++) u+=r[k]*inv[j][k]; return u;}));
+  const TOT=T.flat().reduce((u,v)=>u+v,0);
+  const D=T.map(r=>r.reduce((u,v)=>u+v,0)), R=T[0].map((_,j)=>T.reduce((u,r)=>u+r[j],0));
+  const value=(mask,lam)=>{ const X2=X.map((r,i)=>((mask>>i)&1)?r.map(v=>v*(1-lam)):r); return 100*(TOT-totalOf(X2))/TOT; };
+  const single=(i,lam)=>100*lam*D[i]*(1+R[i])/(1+lam*T[i][i])/TOT;
+  const targetDR=(i,k,lam)=>100*lam*T[i][k]*(1+R[i])/(1+lam*T[i][i])/R[k];
+  return {n,T,D,R,TOT,value,single,targetDR};
+}
+function enumerateAll(model,lam,costs,budget,onProgress){
+  const n=model.n, N=1<<n, vals=new Float64Array(N), cost=new Float64Array(N);
+  for(let m=1;m<N;m++){ vals[m]=model.value(m,lam); let c=0; for(let i=0;i<n;i++) if((m>>i)&1) c+=costs[i]; cost[m]=c; }
+  const pc=m=>{let c=0; while(m){c+=m&1; m>>=1;} return c;};
+  const bestBySize=Array(n+1).fill(0);
+  for(let m=1;m<N;m++){ const k=pc(m); if(!bestBySize[k] || vals[m]>vals[bestBySize[k]]) bestBySize[k]=m; }
+  let bestBudget=0; for(let m=1;m<N;m++) if(cost[m]<=budget+1e-12 && vals[m]>vals[bestBudget]) bestBudget=m;
+  // Pareto frontier: sort by cost, keep strictly improving value
+  const idx=Array.from({length:N-1},(_,i)=>i+1).sort((a,b)=>cost[a]-cost[b]||vals[b]-vals[a]);
+  const frontier=[]; let bv=-1; for(const m of idx){ if(vals[m]>bv+1e-9){ frontier.push(m); bv=vals[m]; } }
+  return {vals,cost,bestBySize,bestBudget,frontier};
+}
+
+
+const model=makeModel(A); const n=model.n;
+const costsDiv=document.getElementById('costs');
+NAMES.forEach((nm,i)=>{costsDiv.insertAdjacentHTML('beforeend',`<span>F${i+1} ${nm}</span><input type="number" min="0" step="0.1" value="1" id="c${i}">`);});
+const fmt=(v,d=2)=>Number(v).toFixed(d);
+const setOf=m=>[...Array(n).keys()].filter(i=>(m>>i)&1);
+const label=m=>'{'+setOf(m).map(i=>'F'+(i+1)).join(', ')+'}';
+const causeMask=[...Array(n).keys()].filter(i=>model.D[i]-model.R[i]>0).reduce((u,i)=>u|(1<<i),0);
+function render(){
+  const lam=Math.min(1,Math.max(0.05,+document.getElementById('lam').value||0.5));
+  const costs=[...Array(n).keys()].map(i=>Math.max(0,+document.getElementById('c'+i).value||0));
+  const budget=Math.max(0,+document.getElementById('budget').value||0);
+  const st=document.getElementById('status'); st.textContent='Evaluating all 65,536 bundles…';
+  setTimeout(()=>{
+    const t0=performance.now(); const r=enumerateAll(model,lam,costs,budget);
+    const causeVal=r.vals[causeMask];
+    const k=document.getElementById('kpi'); const b=r.bestBudget;
+    k.innerHTML= b? `<div><b>${fmt(r.vals[b],1)}%</b><span>reduction in total risk transmission</span></div><div><b>${setOf(b).length}</b><span>interventions, cost ${fmt(r.cost[b],2)} of ${fmt(budget,2)}</span></div><div style="flex:2"><b style="font-size:15px">${label(b)}</b><span>${setOf(b).map(i=>NAMES[i]).join('; ')}</span></div>`
+      : `<div><b>–</b><span>No intervention fits within the budget.</span></div>`;
+    const single=[...Array(n).keys()].map(i=>({i,v:model.single(i,lam),t:model.targetDR(i,12,lam)})).sort((a,b)=>b.v-a.v);
+    const top=single[0].v;
+    document.getElementById('lev').innerHTML='<tr><th>Rank</th><th class="l">Factor</th><th class="l">Group</th><th>ΔΣ (%)</th><th>ΔR<sub>13</sub> (%)</th><th>τ</th><th>Cost</th><th>ΔΣ per unit cost</th></tr>'+
+      single.map((s,j)=>`<tr><td>${j+1}</td><td class="l">F${s.i+1} ${NAMES[s.i]}</td><td class="l"><span class="tag ${model.D[s.i]>model.R[s.i]?'c':''}">${model.D[s.i]>model.R[s.i]?'Cause':'Effect'}</span></td><td>${fmt(s.v)}</td><td>${s.i===12?'–':fmt(s.t)}</td><td>${fmt(s.v/top)}</td><td>${fmt(costs[s.i])}</td><td>${costs[s.i]>0?fmt(s.v/costs[s.i]):'∞'}</td></tr>`).join('');
+    document.getElementById('sizes').innerHTML='<tr><th>Size</th><th class="l">Optimal bundle</th><th>ΔΣ (%)</th><th>Cost</th><th>% of cause-group reduction</th></tr>'+
+      r.bestBySize.slice(1).map((m,j)=>`<tr><td>${j+1}</td><td class="l">${label(m)}</td><td>${fmt(r.vals[m])}</td><td>${fmt(r.cost[m])}</td><td>${fmt(100*r.vals[m]/causeVal,1)}</td></tr>`).join('')+
+      `<tr><td>–</td><td class="l"><i>All ${setOf(causeMask).length} cause factors</i></td><td>${fmt(causeVal)}</td><td>${fmt(r.cost[causeMask])}</td><td>100.0</td></tr>`;
+    drawFrontier(r,b);
+    st.textContent=`Done in ${fmt((performance.now()-t0)/1000,1)} s (λ = ${fmt(lam)}).`;
+  },20);
+}
+function drawFrontier(r,b){
+  const W=760,H=260,P={l:46,r:14,t:12,b:34}; const pts=r.frontier.map(m=>({m,x:r.cost[m],y:r.vals[m]}));
+  const xmax=Math.max(...pts.map(p=>p.x))||1, ymax=Math.max(...pts.map(p=>p.y))*1.05;
+  const X=x=>P.l+(W-P.l-P.r)*x/xmax, Y=y=>H-P.b-(H-P.t-P.b)*y/ymax;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Cost–reduction frontier">`;
+  for(let g=0;g<=4;g++){const y=ymax*g/4; s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(y)}" y2="${Y(y)}" stroke="#eef0f4"/><text x="${P.l-6}" y="${Y(y)+4}" text-anchor="end">${fmt(y,0)}%</text>`;}
+  for(let g=0;g<=4;g++){const x=xmax*g/4; s+=`<text x="${X(x)}" y="${H-P.b+16}" text-anchor="middle">${fmt(x,1)}</text>`;}
+  s+=`<text x="${(W+P.l)/2}" y="${H-4}" text-anchor="middle">Total cost of bundle</text>`;
+  s+=`<polyline fill="none" stroke="#2b5797" stroke-width="2" points="${pts.map(p=>X(p.x)+','+Y(p.y)).join(' ')}"/>`;
+  pts.forEach(p=>{s+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${p.m===b?6:3.5}" fill="${p.m===b?'#1f7a4d':'#2b5797'}"><title>${label(p.m)}: cost ${fmt(p.x)}, ΔΣ ${fmt(p.y)}%</title></circle>`;});
+  s+='</svg><p class="note">Each point is a bundle that no cheaper bundle beats; hover for its composition. The green point is the budget-optimal bundle.</p>';
+  document.getElementById('chart').innerHTML=s;
+}
+document.getElementById('run').onclick=render;
+document.getElementById('reset').onclick=()=>{for(let i=0;i<n;i++) document.getElementById('c'+i).value=1; render();};
+render();
+</script></body></html>
