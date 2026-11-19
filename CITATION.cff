@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use these materials, please cite them as below."
+title: "Intervention leverage for healthcare supply chain risk networks: data, code and decision-support tool"
+authors:
+  - family-names: Sabuj
+    given-names: Mohammad Ali
+    orcid: "https://orcid.org/0000-0002-2801-0177"
+  - family-names: Islam
+    given-names: Md Sadekul
+    orcid: "https://orcid.org/0000-0003-4205-4544"
+  - family-names: Hridita
+    given-names: Fariha Chowdhury
+    orcid: "https://orcid.org/0009-0000-7355-9559"
+version: "1.0.0"
+date-released: "2026-11-19"
+license: MIT
